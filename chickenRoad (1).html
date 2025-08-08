@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>متنبئ طريق الدجاج — المغرب (Melbet)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary-color: #ffcc00;
+      --background-color: #121212;
+      --container-bg-color: #1e1e1e;
+      --dark-grey: #333;
+      --light-grey: #444;
+      --text-color: white;
+      --disabled-color: #777;
+      --success-color: #00cc66;
+      --acid-green: #39FF14;
+    }
+    body {
+      font-family: "Montserrat", sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-x: hidden;
+      direction: rtl;
+    }
+    body.modal-open { overflow: hidden; }
+    .hidden{display:none}
+    .game-container {
+      max-width: 950px; width: 100%;
+      margin: 0 auto; background-color: var(--container-bg-color);
+      border-radius: 15px; padding: 40px; box-shadow: 0 10px 30px rgba(0,0,0,.3);
+    }
+    h1 {
+      color: var(--primary-color);
+      margin-bottom: 20px; font-size: 2.2rem; font-weight: 700;
+      text-shadow: 0 3px 6px rgba(0,0,0,0.4);
+    }
+    .badges{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+    .badge{display:inline-block;padding:6px 10px;border-radius:8px;background:#064e3b;color:#a7f3d0;font-weight:700;font-size:13px}
+    button {
+      padding: 16px 32px; font-size: 18px; width: 220px;
+      background-color: #ffcc00; color: #121212; border: none;
+      border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative; overflow: hidden;
+    }
+    button:hover:not(:disabled){ background:#ffdd33; transform:translateY(-3px); box-shadow:0 7px 14px rgba(0,0,0,.2); color:#000; }
+    button:disabled{ background:#444; color:#777; cursor:not-allowed; }
+    button::after{ content:""; position:absolute; inset:0; background:linear-gradient(45deg,transparent 25%,rgba(255,255,255,.1) 50%,transparent 75%);
+      background-size:400% 400%; opacity:0; transition:.5s; }
+    button:hover:not(:disabled)::after{ opacity:1; animation:shine 1.5s infinite; }
+    input{
+      padding:14px 20px; border-radius:10px; background:#333; color:#fff; border:none; font-size:18px;
+      box-shadow:0 2px 5px rgba(0,0,0,.2); text-align:center; width: 220px;
+    }
+    input:invalid{border:2px solid #ff4444} input:valid{border:2px solid #00cc66}
+    label{display:block;margin-bottom:8px;font-weight:600;color:#ddd;font-size:16px}
+    .id-form{display:flex;flex-direction:column;align-items:center;gap:16px;margin-bottom:20px}
+    .error{color:#ff6b6b;font-size:14px;min-height:18px}
+    .how-to-use-btn{ background:transparent; border:2px solid #ffcc00; color:#ffcc00; margin:0 auto 18px; max-width:420px; }
+    .loading-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; flex-direction:column; justify-content:center; align-items:center; z-index:1000; opacity:0; visibility:hidden; transition:.3s; }
+    .loading-overlay.active{ opacity:1; visibility:visible; }
+    .loading-spinner{ width:60px; height:60px; border:6px solid rgba(255,204,0,.3); border-radius:50%; border-top-color:#ffcc00; animation:spin 1s ease-in-out infinite; margin-bottom:18px; }
+    .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.7); display:flex; justify-content:center; align-items:center; z-index:2000; opacity:0; visibility:hidden; transition:.3s; }
+    .modal-overlay.active{ opacity:1; visibility:visible; }
+    .modal-content{ background:#1e1e1e; border-radius:15px; padding:28px; max-width:780px; width:90%; position:relative; text-align:right; }
+    .close-modal{ position:absolute; top:12px; left:12px; font-size:24px; color:#aaa; cursor:pointer; }
+    .modal-title{ font-size:22px; color:#ffcc00; margin-bottom:12px; }
+    .modal-text{ font-size:16px; line-height:1.7; }
+    @keyframes shine{0%{background-position:100% 50%}100%{background-position:0% 50%}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* Game */
+    .game-settings{ margin-bottom:14px; display:flex; justify-content:center; align-items:center; gap:14px; }
+    .custom-select-wrapper{ position:relative; width:220px; transition:.3s; }
+    .custom-select-wrapper.disabled-visuals{ opacity:.5; cursor:not-allowed; }
+    #difficulty-select{ appearance:none; width:100%; padding:14px 32px; border-radius:10px; background:#333; color:#fff; border:none; font-size:18px; cursor:pointer; font-family:"Montserrat",sans-serif; }
+    .custom-select-wrapper::after{ content:'▼'; position:absolute; top:50%; left:16px; transform:translateY(-50%); pointer-events:none; font-size:18px; }
+    #signal-display{ border:2px solid var(--primary-color); padding:12px 16px; border-radius:10px; margin:0 auto 16px; font-size:18px; font-weight:600; max-width:520px; }
+    #signal-clicks{ color:var(--acid-green); font-weight:700; text-decoration:underline; font-size:28px; text-shadow:0 0 8px var(--acid-green); }
+    #game-stage{ background:#2a2a2a; border-radius:10px; padding:16px 0; position:relative; height:320px; display:flex; align-items:center; border:2px solid #333; overflow-x:scroll; scroll-behavior:smooth; }
+    #game-stage::-webkit-scrollbar{ display:none } #game-stage{ -ms-overflow-style:none; scrollbar-width:none; }
+    #path-container{ display:flex; align-items:center; height:100%; position:relative; }
+    /* LEFT-to-RIGHT movement for the chicken */
+    #chicken-char{ position:absolute; width:84px; height:84px; z-index:10; bottom:96px; left: 30px; transition:left .5s ease-in-out; }
+    .path-step{ display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; width:140px; flex-shrink:0; }
+    .step-circle{ width:105px; height:105px; border-radius:50%; background:#333; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:20px; color:#fff; border:6px solid #444; transition:.4s; }
+    .path-step.passed{ opacity:.6 } .path-step.active .step-circle{ background:#00cc66; transform:scale(1.1); box-shadow:0 0 30px #00cc66 }
+    .grate{ width:92px; height:46px; background:#111; border-radius:5px; margin-top:54px; border-top:5px solid #222; }
+    #controls-panel{ padding:20px 0; margin-top:8px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:18px; }
+    .button-group{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+    .bet-amount{ font-size:24px; font-weight:700; color:#ffcc00; text-shadow:0 0 10px rgba(255,204,0,.3); }
+  </style>
+</head>
+<body>
+  <!-- Loading -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">جارٍ التحقق من المعرف...</div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-content">
+      <span class="close-modal" id="close-modal">&times;</span>
+      <h3 class="modal-title">كيفية استخدام البوت</h3>
+      <div class="modal-text">
+        <ol>
+          <li><strong>أولًا:</strong> اضغط «الحصول على مبلغ الرهان» لمعرفة المبلغ المطلوب.</li>
+          <li><strong>يَجِب</strong> أن تضع رهانك على Melbet بالمبلغ المعروض أولًا، ثم تضغط «الحصول على الإشارة».</li>
+        </ol>
+        <p>هذه هي الطريقة الوحيدة لتحقيق الربح.</p>
+        <div class="badges" style="margin-top:10px;">
+          <span class="badge">المغرب</span>
+          <span class="badge">العملة: MAD</span>
+          <span class="badge">رمز ترويجي: MHS77</span>
+          <span class="badge">الحد الأدنى للإيداع: 50 MAD</span>
+          <span class="badge">الحد الأقصى للرهان لكل إشارة: 25 MAD</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="game-container">
+    <h1>متنبئ طريق الدجاج — المغرب (Melbet)</h1>
+
+    <button class="how-to-use-btn" id="how-to-use-btn">كيفية استخدام البوت</button>
+
+    <div class="id-form" id="id-form">
+      <div>
+        <label for="user-id">أدخل معرف حساب Melbet الخاص بك</label>
+        <input type="text" id="user-id" placeholder="معرف Melbet (6 أرقام على الأقل)" pattern="\d{6,}" inputmode="numeric" required />
+        <div class="error" id="id-error"></div>
+      </div>
+      <button id="verify-btn" disabled>تحقق من المعرف</button>
+    </div>
+
+    <div id="game-content" class="hidden">
+      <div class="game-settings">
+        <label for="difficulty-select">درجة الصعوبة:</label>
+        <div class="custom-select-wrapper" id="difficulty-wrapper">
+          <select id="difficulty-select">
+            <option value="24">سهل</option>
+            <option value="22">متوسط</option>
+            <option value="20">صعب</option>
+            <option value="15">متطرف</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="signal-display" class="hidden">
+        يجب النقر على «اذهب» <span id="signal-clicks">0</span> مرة
+      </div>
+
+      <div id="game-stage">
+        <div id="path-container"></div>
+        <img id="chicken-char" src="https://iili.io/FvIoXhg.webp" alt="chicken">
+      </div>
+
+      <div id="controls-panel">
+        <div class="bet-amount">الرهان: <span id="bet-amount-display">...</span> MAD</div>
+        <div class="button-group">
+          <button id="get-bet-btn">الحصول على مبلغ الرهان</button>
+          <button id="get-signal-btn" disabled>الحصول على الإشارة</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// DOM
+const idForm = document.getElementById("id-form");
+const gameContent = document.getElementById("game-content");
+const userIdInput = document.getElementById("user-id");
+const verifyBtn = document.getElementById("verify-btn");
+const idError = document.getElementById("id-error");
+const loadingOverlay = document.getElementById("loading-overlay");
+const howToUseBtn = document.getElementById("how-to-use-btn");
+const modalOverlay = document.getElementById("modal-overlay");
+const closeModal = document.getElementById("close-modal");
+const getBetBtn = document.getElementById("get-bet-btn");
+const getSignalBtn = document.getElementById("get-signal-btn");
+const difficultySelect = document.getElementById("difficulty-select");
+const difficultyWrapper = document.getElementById("difficulty-wrapper");
+const gameStage = document.getElementById("game-stage");
+const pathContainer = document.getElementById("path-container");
+const chickenChar = document.getElementById("chicken-char");
+const betAmountDisplay = document.getElementById("bet-amount-display");
+const signalDisplay = document.getElementById("signal-display");
+const signalClicksSpan = document.getElementById("signal-clicks");
+
+// State
+let fullMultiplierList = [];
+let gameState = { isActive:false, stepsMade:0, maxSteps:24, betAmount:0 };
+
+// ID validation
+function isValidId(v){ return /^\d{6,}$/.test(v); }
+userIdInput.addEventListener("input", () => {
+  userIdInput.value = userIdInput.value.replace(/\D/g,"");
+  const ok = isValidId(userIdInput.value);
+  verifyBtn.disabled = !ok;
+  idError.textContent = ok ? "" : "أدخل 6 أرقام على الأقل";
+});
+
+// Prefill from ?uid or localStorage
+(function(){
+  const p = new URLSearchParams(location.search);
+  const qid = p.get("uid") || localStorage.getItem("melbetId");
+  if (qid && isValidId(qid)) {
+    userIdInput.value = qid;
+    userIdInput.dispatchEvent(new Event("input"));
+  }
+})();
+
+// Verify
+verifyBtn.addEventListener("click", () => {
+  if (!isValidId(userIdInput.value)) { idError.textContent = "المعرف غير صالح"; return; }
+  localStorage.setItem("melbetId", userIdInput.value.trim());
+  loadingOverlay.classList.add("active");
+  setTimeout(() => {
+    loadingOverlay.classList.remove("active");
+    idForm.remove();
+    gameContent.classList.remove("hidden");
+    resetGame();
+  }, 1200);
+});
+
+// Modal
+howToUseBtn.addEventListener("click", () => { document.body.classList.add("modal-open"); modalOverlay.classList.add("active"); });
+closeModal.addEventListener("click", () => { document.body.classList.remove("modal-open"); modalOverlay.classList.remove("active"); });
+modalOverlay.addEventListener("click", (e) => { if(e.target===modalOverlay){ document.body.classList.remove("modal-open"); modalOverlay.classList.remove("active"); } });
+
+// Game logic
+function generateMultipliers(length){
+  const arr = []; let m = 1.0;
+  for(let i=0;i<length;i++){ let inc = 0.20 - (i*0.005); if(inc<0.02) inc=0.02; m += inc; arr.push(m); }
+  return arr;
+}
+
+function createStepElement(index){
+  const stepEl = document.createElement('div'); stepEl.className = 'path-step';
+  if(index === -1){ stepEl.innerHTML = `<div class="grate"></div>`; }
+  else { stepEl.dataset.index = index; stepEl.innerHTML = `<div class="step-circle"></div><div class="grate"></div>`; }
+  pathContainer.appendChild(stepEl);
+}
+
+async function simulateClicks(count){
+  for(let i=0;i<count;i++){
+    if(gameState.stepsMade >= gameState.maxSteps) break;
+    gameState.stepsMade++; updateVisuals();
+    await new Promise(r=>setTimeout(r,600));
+  }
+  gameState.isActive = false; getBetBtn.disabled = false; difficultySelect.disabled = false; difficultyWrapper.classList.remove('disabled-visuals');
+}
+
+function updateVisuals(){
+  const stepWidth = 140; const chickenWidth = 84;
+  // LEFT-to-RIGHT: use 'left' property
+  const chickenTargetLeft = (stepWidth * gameState.stepsMade) + (stepWidth / 2) - (chickenWidth / 2);
+  chickenChar.style.left = `${chickenTargetLeft}px`;
+  // Camera scroll to keep chicken in view
+  const cameraTargetScroll = chickenTargetLeft - (chickenWidth * 1.5);
+  gameStage.scroll({ left: cameraTargetScroll, behavior: 'smooth' });
+
+  const activeStepIndex = gameState.stepsMade - 1;
+  const steps = pathContainer.querySelectorAll('.path-step');
+  steps.forEach((el)=>{
+    const idx = el.dataset.index !== undefined ? parseInt(el.dataset.index) : -1;
+    el.classList.remove('active','passed');
+    if(idx === activeStepIndex) el.classList.add('active');
+    else if(idx < activeStepIndex && idx !== -1) el.classList.add('passed');
+  });
+}
+
+function resetGame(){
+  gameState.maxSteps = parseInt(difficultySelect.value,10);
+  fullMultiplierList = generateMultipliers(gameState.maxSteps);
+
+  pathContainer.innerHTML = '';
+  createStepElement(-1);
+  for(let i=0;i<gameState.maxSteps;i++){ createStepElement(i); }
+
+  gameState.isActive = false; gameState.stepsMade = 0;
+  getBetBtn.disabled = false; getSignalBtn.disabled = true;
+  difficultySelect.disabled = false; difficultyWrapper.classList.remove('disabled-visuals');
+  signalDisplay.classList.add('hidden'); betAmountDisplay.textContent = '...';
+  gameStage.scrollLeft = 0;
+  // Initial LEFT position
+  const chickenInitialLeft = (140/2) - (84/2);
+  chickenChar.style.transition = 'none';
+  chickenChar.style.left = `${chickenInitialLeft}px`;
+  setTimeout(()=>{ chickenChar.style.transition = 'left .5s ease-in-out'; }, 50);
+  updateVisuals();
+}
+
+// Events
+getBetBtn.addEventListener("click", () => {
+  resetGame();
+  gameState.isActive = true;
+  // Generate bet between 5 and 25 MAD inclusive
+  gameState.betAmount = Math.floor(Math.random() * (25 - 5 + 1)) + 5;
+  betAmountDisplay.textContent = gameState.betAmount;
+  getSignalBtn.disabled = false; getBetBtn.disabled = true; difficultySelect.disabled = true; difficultyWrapper.classList.add('disabled-visuals');
+});
+
+getSignalBtn.addEventListener("click", () => {
+  if (!gameState.isActive) return;
+  getSignalBtn.disabled = true;
+  let percentage;
+  switch (parseInt(difficultySelect.value,10)) {
+    case 24: percentage = 0.70; break;
+    case 22: percentage = 0.50; break;
+    case 20: percentage = 0.40; break;
+    case 15: percentage = 0.30; break;
+    default: percentage = 0.70;
+  }
+  const maxSignal = Math.floor(gameState.maxSteps * percentage);
+  const clicks = Math.max(1, Math.floor(Math.random() * maxSignal) + 1);
+  signalClicksSpan.textContent = clicks;
+  signalDisplay.classList.remove('hidden');
+  simulateClicks(clicks);
+});
+
+difficultySelect.addEventListener('change', resetGame);
+</script>
+</body>
+</html>
